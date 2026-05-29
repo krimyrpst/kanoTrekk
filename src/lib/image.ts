@@ -4,20 +4,41 @@ const JPEG_QUALITY = 0.82;
 /**
  * Laster et bilde fra File og skalerer det ned til maks bredde via canvas.
  * Returnerer en Blob (JPEG). Kaster hvis nettleseren ikke kan dekode (typisk HEIC
- * på eldre iOS) — kall site skal vise vennlig feilmelding.
+ * på eldre iOS) — kallsite skal vise vennlig feilmelding.
  */
 export async function fileToResizedBlob(file: File): Promise<Blob> {
-  const bitmap = await loadBitmap(file);
-  const scale = Math.min(1, MAX_WIDTH / bitmap.width);
-  const width = Math.round(bitmap.width * scale);
-  const height = Math.round(bitmap.height * scale);
+  const source = await loadFromFile(file);
+  const w = "naturalWidth" in source ? source.naturalWidth : source.width;
+  const h = "naturalHeight" in source ? source.naturalHeight : source.height;
+  return drawToJpegBlob(source, w, h);
+}
+
+/**
+ * Henter ut nåværende frame fra et live <video>-element (getUserMedia) og
+ * skalerer ned til samme maks-bredde som file-import.
+ */
+export async function videoFrameToBlob(video: HTMLVideoElement): Promise<Blob> {
+  const w = video.videoWidth;
+  const h = video.videoHeight;
+  if (!w || !h) throw new Error("Kameraet er ikke klart ennå.");
+  return drawToJpegBlob(video, w, h);
+}
+
+async function drawToJpegBlob(
+  source: CanvasImageSource,
+  srcW: number,
+  srcH: number,
+): Promise<Blob> {
+  const scale = Math.min(1, MAX_WIDTH / srcW);
+  const width = Math.round(srcW * scale);
+  const height = Math.round(srcH * scale);
 
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Kunne ikke initialisere canvas.");
-  ctx.drawImage(bitmap, 0, 0, width, height);
+  ctx.drawImage(source, 0, 0, width, height);
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
@@ -31,7 +52,7 @@ export async function fileToResizedBlob(file: File): Promise<Blob> {
   });
 }
 
-async function loadBitmap(file: File): Promise<ImageBitmap | HTMLImageElement> {
+async function loadFromFile(file: File): Promise<ImageBitmap | HTMLImageElement> {
   if (typeof createImageBitmap === "function") {
     try {
       return await createImageBitmap(file);
@@ -41,13 +62,12 @@ async function loadBitmap(file: File): Promise<ImageBitmap | HTMLImageElement> {
   }
   const url = URL.createObjectURL(file);
   try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    return await new Promise<HTMLImageElement>((resolve, reject) => {
       const el = new Image();
       el.onload = () => resolve(el);
       el.onerror = () => reject(new Error("Bildeformatet støttes ikke på denne enheten."));
       el.src = url;
     });
-    return img;
   } finally {
     URL.revokeObjectURL(url);
   }

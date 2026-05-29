@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CameraButton } from "@/components/CameraButton";
+import { DropZone } from "@/components/DropZone";
+import { LiveCamera } from "@/components/LiveCamera";
 import { ParticipantCard } from "@/components/ParticipantCard";
 import { useHydrateStore, useKanoStore } from "@/lib/store";
 
@@ -14,11 +15,13 @@ export default function ParticipantsPage() {
   const deleteParticipant = useKanoStore((s) => s.deleteParticipant);
   const clearAll = useKanoStore((s) => s.clearAll);
   const [confirmingClear, setConfirmingClear] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   const sorted = participants.slice().sort((a, b) => a.createdAt - b.createdAt);
+  const canDraw = sorted.length >= 2;
 
   return (
-    <div className="space-y-6 pb-32">
+    <div className="space-y-6 pb-28">
       <header className="flex items-center justify-between pt-2">
         <Link href="/" className="text-water-200 hover:text-water-50">
           ← Tilbake
@@ -27,11 +30,24 @@ export default function ParticipantsPage() {
         <span className="text-sm text-water-300/80">{sorted.length}</span>
       </header>
 
+      <section className="grid gap-3 sm:grid-cols-[1fr_auto]">
+        <DropZone onAdd={(blob) => addParticipant(blob)} />
+        <button
+          type="button"
+          onClick={() => setCameraOpen(true)}
+          className="flex flex-row items-center justify-center gap-3 rounded-2xl bg-water-500/90 px-6 py-4 font-semibold text-ink shadow-lg shadow-water-500/30 transition active:scale-[0.98] sm:flex-col sm:px-8 sm:py-5"
+        >
+          <span className="text-2xl sm:text-3xl" aria-hidden>
+            📷
+          </span>
+          <span>Åpne kamera</span>
+        </button>
+      </section>
+
       {sorted.length === 0 ? (
-        <div className="rounded-2xl bg-water-800/40 p-8 text-center text-water-200">
-          <p className="mb-2 text-base">Ingen deltakere ennå.</p>
+        <div className="rounded-2xl bg-water-800/40 p-6 text-center text-water-200">
           <p className="text-sm text-water-300/70">
-            Trykk &laquo;Ta bilde&raquo; nederst for å legge til den første.
+            Drop bilder fra PC, eller åpne kameraet på telefonen for å ta bilder direkte.
           </p>
         </div>
       ) : (
@@ -79,25 +95,26 @@ export default function ParticipantsPage() {
       )}
 
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-water-800/60 bg-ink/95 px-4 py-4 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row">
-          <CameraButton
-            className="flex-1"
-            label="Ta bilde av neste deltaker"
-            onCapture={(blob) => addParticipant(blob)}
-          />
+        <div className="mx-auto max-w-3xl">
           <Link
             href="/draw"
-            aria-disabled={sorted.length < 2}
-            className={`flex-1 rounded-2xl py-4 text-center text-lg font-semibold transition ${
-              sorted.length >= 2
-                ? "bg-water-500 text-ink shadow-lg shadow-water-500/30"
+            aria-disabled={!canDraw}
+            className={`block w-full rounded-2xl py-4 text-center text-lg font-semibold transition ${
+              canDraw
+                ? "bg-sun text-ink shadow-lg shadow-sun/20"
                 : "pointer-events-none bg-water-700/40 text-water-300/60"
             }`}
           >
-            Trekk! →
+            {canDraw ? `Trekk! (${sorted.length} deltakere) →` : "Trenger minst 2 deltakere"}
           </Link>
         </div>
       </div>
+
+      <LiveCamera
+        open={cameraOpen}
+        onClose={() => setCameraOpen(false)}
+        onCapture={(blob) => addParticipant(blob)}
+      />
     </div>
   );
 }
