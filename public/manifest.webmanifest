@@ -1,0 +1,19 @@
+{
+  "name": "kanoTrekk",
+  "short_name": "kanoTrekk",
+  "description": "Trekk tilfeldig fordeling av deltakere til kanoer.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1320",
+  "theme_color": "#164a75",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

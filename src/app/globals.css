@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-gradient-to-b from-water-900 via-ink to-ink text-water-50 font-sans antialiased;
+  min-height: 100dvh;
+}
+
+img {
+  image-orientation: from-image;
+}
+
+@keyframes reel-spin {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(var(--reel-end, -100%));
+  }
+}
+
+.reel-track {
+  animation-name: reel-spin;
+  animation-timing-function: cubic-bezier(0.18, 0.71, 0.18, 1);
+  animation-fill-mode: forwards;
+  animation-duration: var(--reel-duration, 2.4s);
+  animation-delay: var(--reel-delay, 0ms);
+}
